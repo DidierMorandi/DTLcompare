@@ -91,6 +91,7 @@ def add_finding(
     status=STATUS_HYPOTHESIS,
     confidence=CONFIDENCE_PROBABLE,
     relevance_score=50,
+    howto=None,
 ):
     findings.append({
         "case": case,
@@ -102,6 +103,7 @@ def add_finding(
         "evidence": evidence,
         "cause": cause,
         "remediation": remediation,
+        "howto": howto,
     })
 
 
@@ -145,6 +147,34 @@ def compare_remote_diagnostics(working_snapshot, failing_snapshot, lang="fr"):
     failing_name = machine_name(failing_snapshot)
     working_target = target_id(working_snapshot)
     failing_target = target_id(failing_snapshot)
+    target_name = (
+        working_target[1]
+        or failing_target[1]
+        or working_target[0]
+        or failing_target[0]
+        or "CIBLE"
+    )
+    target_alias = (
+        target_name.split("-", 1)[1]
+        if target_name.upper().startswith("SCCF-") and "-" in target_name
+        else None
+    )
+    target_lookup = (
+        f"{target_name} ou {target_alias}"
+        if target_alias and target_alias != target_name
+        else target_name
+    )
+    target_delete_commands = (
+        f"cmdkey /delete:{target_name}\n"
+        f"cmdkey /delete:{target_alias}"
+        if target_alias and target_alias != target_name
+        else f"cmdkey /delete:{target_name}"
+    )
+    target_share_paths = (
+        f"\\\\{target_name}\\share\n\\\\{target_alias}\\share"
+        if target_alias and target_alias != target_name
+        else f"\\\\{target_name}\\share"
+    )
     working_remote = working_snapshot.get("remote_tests") or {}
     failing_remote = failing_snapshot.get("remote_tests") or {}
     working_shares = remote_shares(working_snapshot)
@@ -260,8 +290,30 @@ def compare_remote_diagnostics(working_snapshot, failing_snapshot, lang="fr"):
             ),
             remediation=(
                 "Comparer whoami, whoami /upn, le compte SMB recommandé, les entrées du "
-                "Gestionnaire d'identification et les sessions net use sur les deux postes."
+                "Gestionnaire d'identification et les sessions net use sur les deux postes. "
+                f"Si une entrée mémorisée existe pour {target_name}, la supprimer avec "
+                f"cmdkey /delete:{target_name}, puis vider les sessions SMB avec "
+                "net use * /delete /y."
             ),
+            howto=[
+                ("CAUSE PROBABLE", "Ancien mot de passe mémorisé."),
+                (
+                    "POURQUOI",
+                    f"La cible fonctionne depuis {working_name}, mais pas depuis {failing_name}.",
+                ),
+                (
+                    "COMMENT LE VÉRIFIER",
+                    f"cmdkey /list\n\nRechercher une entrée pour :\n{target_lookup}",
+                ),
+                (
+                    "COMMENT LE CORRIGER",
+                    f"{target_delete_commands}\n\npuis\n\nnet use * /delete /y",
+                ),
+                (
+                    "COMMENT VALIDER",
+                    f"Tenter :\n{target_share_paths}\n\nLe partage doit s'ouvrir sans erreur.",
+                ),
+            ],
         )
 
     working_join = detect_join_type(working_snapshot)
@@ -538,6 +590,13 @@ def format_findings(findings):
         if finding.get("remediation"):
             lines.append(f"Action : {finding.get('remediation')}")
 
+        if finding.get("howto"):
+            lines.append("Comment :")
+            for label, text in finding.get("howto") or []:
+                lines.append(f"  {label}")
+                for text_line in str(text).splitlines():
+                    lines.append(f"    {text_line}" if text_line else "")
+
         lines.append("")
 
     return "\n".join(lines)
@@ -758,6 +817,29 @@ def render_human_conclusion_html(conclusion):
 """
 
 
+def render_howto_html(finding):
+    rows = []
+
+    for label, text in finding.get("howto") or []:
+        body = "<br>".join(escape(str(text)).splitlines())
+        rows.append(
+            f"<div class=\"howto-step\">"
+            f"<h4>{escape(str(label))}</h4>"
+            f"<p>{body}</p>"
+            f"</div>"
+        )
+
+    if not rows:
+        return ""
+
+    return f"""
+<div class="howto-box">
+  <h4>Comment le faire</h4>
+  {''.join(rows)}
+</div>
+"""
+
+
 def generate_html_report(findings, working_snapshot, failing_snapshot):
     human_conclusion = build_human_conclusion(
         findings,
@@ -786,6 +868,7 @@ def generate_html_report(findings, working_snapshot, failing_snapshot):
             f"<p class=\"remediation\"><strong>Action :</strong> {escape(str(finding.get('remediation')))}</p>"
             if finding.get("remediation") else ""
         )
+        howto = render_howto_html(finding)
         status = finding.get("status") or ""
         conf   = finding.get("confidence") or ""
         if status == STATUS_ELIMINATED:
@@ -814,6 +897,7 @@ def generate_html_report(findings, working_snapshot, failing_snapshot):
   <p>{escape(str(finding.get('cause') or ''))}</p>
   <ul>{evidence}</ul>
   {remediation}
+  {howto}
 </article>
 """)
 
@@ -1037,6 +1121,40 @@ h2.section-title {{
   margin-top: 10px;
 }}
 .remediation strong {{ color: var(--blue); }}
+.howto-box {{
+  background: #fffdf7;
+  border: 1px solid #ead7a4;
+  padding: 12px 14px;
+  margin-top: 12px;
+}}
+.howto-box > h4 {{
+  margin: 0 0 10px;
+  color: var(--orange);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}}
+.howto-step {{
+  border-top: 1px solid #f0e2bd;
+  padding-top: 9px;
+  margin-top: 9px;
+}}
+.howto-step:first-of-type {{
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}}
+.howto-step h4 {{
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text);
+}}
+.howto-step p {{
+  margin: 0;
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 13px;
+  white-space: normal;
+}}
 @media (max-width: 780px) {{
   .summary-grid {{ grid-template-columns: 1fr; }}
   main {{ padding: 18px 16px 36px; }}
