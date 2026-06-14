@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTLcompare — Manuel de référence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+:root{--bg:#0f1117;--surface:#181c27;--border:#252b3b;--accent:#58a6ff;--text:#c9d1e0;--muted:#5a6580;--heading:#e8edf5;--code:#12161f;--code-border:#1e2535;--sidebar:240px}
+*{box-sizing:border-box;margin:0;padding:0} body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.7;display:flex;min-height:100vh}
+nav{position:fixed;inset:0 auto 0 0;width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);padding:28px 0 40px}nav .logo{font:600 11px 'IBM Plex Mono',monospace;color:var(--accent);letter-spacing:2px;text-transform:uppercase;padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}nav .logo span{display:block;color:var(--muted);font-size:9px;margin-top:4px}nav a{display:block;color:var(--muted);text-decoration:none;font:12px 'IBM Plex Mono',monospace;padding:5px 20px}nav a:hover{color:var(--accent);background:rgba(88,166,255,.06)}
+main{margin-left:var(--sidebar);padding:56px 64px 100px;max-width:1100px;width:100%}.doc-header{margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}h1{font:600 26px 'IBM Plex Mono',monospace;color:var(--heading)}.accent{color:var(--accent)}.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.pill{font:11px 'IBM Plex Mono',monospace;padding:3px 10px;border-radius:3px;background:var(--code);border:1px solid var(--code-border);color:var(--muted)}
+h2{font:600 13px 'IBM Plex Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:2px;margin:52px 0 20px;padding-bottom:10px;border-bottom:1px solid var(--border)}h3{font:600 13px 'IBM Plex Mono',monospace;color:var(--heading);margin:30px 0 10px}p{margin-bottom:14px}ul{margin:0 0 20px 22px}li{margin:6px 0}.card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:4px;padding:16px 18px;margin:14px 0 22px}code,.file{font-family:'IBM Plex Mono',monospace;background:var(--code);border:1px solid var(--code-border);border-radius:3px;color:#93c5fd}.file{display:inline-block;padding:4px 9px;margin:4px 0 12px}table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px}th{font:600 10px 'IBM Plex Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;text-align:left;background:var(--code);padding:10px 14px}td{padding:9px 14px;border-bottom:1px solid var(--border)}
+</style>
+</head>
+<body>
+<nav><div class="logo">DTLcompare<span>Manuel de référence</span></div><a href="#role">Rôle</a><a href="#modele">Modèle d'analyse</a><a href="#entrees">Entrées</a><a href="#constats">Constats</a><a href="#rapports">Rapports</a><a href="#limites">Limites</a></nav>
+<main>
+<header class="doc-header"><h1><span class="accent">DTLcompare</span> — Manuel de référence</h1><p>Référence descriptive de l'analyse comparative de snapshots DTLknowsWhy.</p><div class="meta"><span class="pill">Type : analyse comparative</span><span class="pill">Langage : Python</span><span class="pill">Dépendance : DTLknowsWhy</span></div></header>
+<h2 id="role">Rôle</h2>
+<p>DTLcompare analyse deux snapshots DTLknowsWhy représentant deux points de vue vers une même cible : un accès réussi et un accès échoué. Son objectif est d'expliquer les écarts observables plutôt que de collecter lui-même des données.</p>
+<h2 id="modele">Modèle d'analyse</h2>
+<div class="card"><h3>Comparaison orientée cause</h3><p>Le moteur transforme les différences de snapshots en constats classés : causes probables, causes éliminées et informations contextuelles.</p></div>
+<div class="card"><h3>Domaines couverts</h3><p>L'analyse se concentre sur les accès distants, notamment SMB, TCP 445, visibilité des partages, authentification, domaine/groupe de travail, rattachement Entra/Azure AD et filtres réseau ou sécurité.</p></div>
+<h2 id="entrees">Entrées conceptuelles</h2>
+<table><thead><tr><th>Entrée</th><th>Description</th></tr></thead><tbody><tr><td>Snapshot fonctionnel</td><td>Point de vue où l'accès distant aboutit.</td></tr><tr><td>Snapshot en échec</td><td>Point de vue où le même accès échoue.</td></tr><tr><td>Schéma DTLknowsWhy</td><td>Structure JSON produite par les collecteurs DTLknowsWhy.</td></tr></tbody></table>
+<h2 id="constats">Structure des constats</h2>
+<p>Chaque constat possède un identifiant stable, un titre, un niveau, un statut, une confiance, un score de pertinence, des preuves, une cause et éventuellement une remédiation. Cette structure permet à la fois la lecture humaine et l'exploitation automatisée.</p>
+<h2 id="rapports">Rapports</h2>
+<p>Les rapports JSON, texte et HTML représentent la même analyse sous trois formes : données structurées, synthèse lisible et document partageable. Le rapport HTML met en avant la conclusion humaine et les écarts les plus significatifs.</p>
+<h2 id="limites">Limites</h2>
+<ul><li>DTLcompare dépend du schéma de snapshot DTLknowsWhy.</li><li>La qualité de l'analyse dépend de la complétude des snapshots fournis.</li><li>L'outil ne collecte pas de données et ne corrige pas les causes détectées.</li></ul>
+</main>
+</body>
+</html>
