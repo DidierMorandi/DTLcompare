@@ -1,17 +1,417 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>DTLcompare - Guide utilisateur</title>
-<style>@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');:root{--bg:#0f1117;--surface:#181c27;--border:#252b3b;--accent:#58a6ff;--text:#c9d1e0;--muted:#5a6580;--heading:#e8edf5;--code:#12161f;--code-border:#1e2535;--sidebar:240px}*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.7;display:flex;min-height:100vh}nav{position:fixed;inset:0 auto 0 0;width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);padding:28px 0 40px}nav .logo{font:600 11px 'IBM Plex Mono',monospace;color:var(--accent);letter-spacing:2px;text-transform:uppercase;padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}nav .logo span{display:block;color:var(--muted);font-size:9px;margin-top:4px}nav a{display:block;color:var(--muted);text-decoration:none;font:12px 'IBM Plex Mono',monospace;padding:5px 20px}nav a:hover{color:var(--accent);background:rgba(88,166,255,.06)}main{margin-left:var(--sidebar);padding:56px 64px 100px;max-width:1100px;width:100%}.doc-header{margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}h1{font:600 26px 'IBM Plex Mono',monospace;color:var(--heading)}.accent{color:var(--accent)}.pill{font:11px 'IBM Plex Mono',monospace;padding:3px 10px;border-radius:3px;background:var(--code);border:1px solid var(--code-border);color:var(--muted);display:inline-block;margin:12px 8px 0 0}h2{font:600 13px 'IBM Plex Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:2px;margin:52px 0 20px;padding-bottom:10px;border-bottom:1px solid var(--border)}h3{font:600 13px 'IBM Plex Mono',monospace;color:var(--heading);margin:30px 0 10px}p{margin-bottom:14px}ul,ol{margin:0 0 20px 22px}.card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:4px;padding:16px 18px;margin:14px 0 22px}code{font-family:'IBM Plex Mono',monospace;background:var(--code);border:1px solid var(--code-border);border-radius:3px;color:#93c5fd;padding:1px 5px}pre{background:var(--code);border:1px solid var(--code-border);border-radius:4px;padding:14px;overflow:auto;margin:14px 0 22px;color:#93c5fd}</style></head>
-<body><nav><div class="logo">DTLcompare<span>Guide utilisateur</span></div><a href="#objectif">Objectif</a><a href="#preparer">Préparer</a><a href="#lancer">Lancer</a><a href="#rapports">Rapports</a><a href="#lire">Lire l'analyse</a><a href="#depannage">Dépannage</a></nav>
-<main><header class="doc-header"><h1><span class="accent">DTLcompare</span> - Guide utilisateur</h1><p>Guide d'utilisation de DTLcompare pour comparer deux diagnostics distants DTLknowsWhy.</p><span class="pill">Snapshots JSON</span><span class="pill">SMB</span><span class="pill">Rapports HTML / TXT / JSON</span></header>
-<h2 id="objectif">Objectif</h2><p>DTLcompare sert à comprendre pourquoi un accès distant fonctionne depuis un poste mais échoue depuis un autre. Il ne lance pas le diagnostic lui-même : il analyse deux fichiers JSON déjà produits par DTLknowsWhy.</p>
-<h2 id="preparer">Préparer les fichiers</h2><ol><li>Produire un snapshot DTLknowsWhy depuis le poste où l'accès fonctionne.</li><li>Produire un second snapshot depuis le poste où l'accès échoue.</li><li>Vérifier que les deux diagnostics ciblent le même serveur, la même machine ou le même partage.</li><li>Placer les deux fichiers JSON dans un dossier accessible depuis l'environnement Python.</li></ol>
-<h2 id="lancer">Lancer l'analyse</h2><p>L'analyse se lance en indiquant d'abord le snapshot fonctionnel, puis le snapshot en échec.</p><pre><code>python comparative_analysis.py working_snapshot.json failing_snapshot.json</code></pre><p>Exemple :</p><pre><code>python comparative_analysis.py 172.17.7.19_snapshot_20260610_151730.json 172.17.7.19_snapshot_20260610_152617.json</code></pre>
-<h2 id="rapports">Rapports produits</h2><div class="card"><h3>Rapport HTML</h3><p>Document principal pour la lecture humaine et le partage avec une équipe support ou infrastructure.</p></div><div class="card"><h3>Rapport texte</h3><p>Synthèse compacte utilisable dans un ticket, un courriel ou une note d'intervention.</p></div><div class="card"><h3>Rapport JSON</h3><p>Version structurée pour archivage, reprise automatique ou comparaison ultérieure.</p></div>
-<h2 id="lire">Lire l'analyse</h2><ul><li><strong>Causes probables</strong> : hypothèses classées avec preuves et score de pertinence.</li><li><strong>Causes éliminées</strong> : pistes que les données permettent d'écarter.</li><li><strong>Preuves</strong> : faits extraits des snapshots, comme ping, TCP 445, partages visibles ou messages d'erreur.</li><li><strong>Remédiation</strong> : action conseillée lorsque l'analyse permet de proposer une suite logique.</li></ul>
-<h2 id="options">Options utiles</h2><pre><code>--lang fr|en
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DTLcompare - Guide utilisateur</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --border: #252b3b;
+      --accent: #58a6ff;
+      --ok: #6ee7b7;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --text: #c9d1e0;
+      --muted: #7c879f;
+      --heading: #e8edf5;
+      --code: #12161f;
+      --code-border: #1e2535;
+      --sidebar: 250px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      display: flex;
+      min-height: 100vh;
+    }
+    nav {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--sidebar);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 0 40px;
+      overflow: auto;
+    }
+    nav .logo {
+      font: 600 11px 'IBM Plex Mono', monospace;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    nav .logo span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      margin-top: 4px;
+    }
+    nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      font: 12px 'IBM Plex Mono', monospace;
+      padding: 5px 20px;
+    }
+    nav a:hover {
+      color: var(--accent);
+      background: rgba(88, 166, 255, .06);
+    }
+    main {
+      margin-left: var(--sidebar);
+      padding: 56px 64px 100px;
+      max-width: 1180px;
+      width: 100%;
+    }
+    .doc-header {
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font: 600 26px 'IBM Plex Mono', monospace;
+      color: var(--heading);
+      margin-bottom: 12px;
+    }
+    h2 {
+      font: 600 13px 'IBM Plex Mono', monospace;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 52px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      font: 600 13px 'IBM Plex Mono', monospace;
+      color: var(--heading);
+      margin: 22px 0 10px;
+    }
+    p { margin-bottom: 14px; }
+    ul, ol { margin: 0 0 20px 22px; }
+    li { margin-bottom: 7px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      background: rgba(255, 255, 255, .018);
+      border: 1px solid var(--border);
+    }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--heading);
+      font: 600 12px 'IBM Plex Mono', monospace;
+      background: rgba(255, 255, 255, .025);
+    }
+    tr:last-child td { border-bottom: 0; }
+    .accent { color: var(--accent); }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .danger { color: var(--danger); }
+    .pill {
+      font: 11px 'IBM Plex Mono', monospace;
+      padding: 3px 10px;
+      border-radius: 3px;
+      background: var(--code);
+      border: 1px solid var(--code-border);
+      color: var(--muted);
+      display: inline-block;
+      margin: 12px 8px 0 0;
+    }
+    .card {
+      background: rgba(255, 255, 255, .025);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 18px;
+      margin: 14px 0 22px;
+    }
+    .example {
+      border-left: 3px solid var(--accent);
+      padding-left: 16px;
+    }
+    .checklist li::marker { color: var(--accent); }
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+      background: var(--code);
+      border: 1px solid var(--code-border);
+      border-radius: 3px;
+      color: #93c5fd;
+      padding: 1px 5px;
+    }
+    pre {
+      background: var(--code);
+      border: 1px solid var(--code-border);
+      border-radius: 4px;
+      padding: 14px;
+      overflow: auto;
+      margin: 14px 0 22px;
+      color: #93c5fd;
+    }
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 820px) {
+      body { display: block; }
+      nav {
+        position: static;
+        width: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+      main {
+        margin-left: 0;
+        padding: 32px 22px 70px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">DTLcompare<span>Guide utilisateur</span></div>
+    <a href="#objectif">Objectif</a>
+    <a href="#idee">Principe</a>
+    <a href="#preparer">Pr&eacute;parer</a>
+    <a href="#lancer">Lancer</a>
+    <a href="#exemples">Exemples</a>
+    <a href="#rapports">Rapports</a>
+    <a href="#lire">Lire l'analyse</a>
+    <a href="#actions">Agir</a>
+    <a href="#options">Options</a>
+    <a href="#depannage">D&eacute;pannage</a>
+  </nav>
+
+  <main>
+    <header class="doc-header">
+      <h1><span class="accent">DTLcompare</span> - Guide utilisateur</h1>
+      <p>Guide pratique pour comparer deux diagnostics distants DTLknowsWhy et comprendre pourquoi un acc&egrave;s fonctionne depuis un poste mais &eacute;choue depuis un autre.</p>
+      <span class="pill">Snapshots JSON</span>
+      <span class="pill">SMB</span>
+      <span class="pill">Rapports HTML / TXT / JSON</span>
+      <span class="pill">Exemples PowerShell</span>
+    </header>
+
+    <h2 id="objectif">Objectif</h2>
+    <p>DTLcompare ne lance pas le diagnostic lui-m&ecirc;me. Il analyse deux fichiers JSON d&eacute;j&agrave; produits par DTLknowsWhy :</p>
+    <ul>
+      <li>un snapshot pris depuis un poste o&ugrave; l'acc&egrave;s distant fonctionne ;</li>
+      <li>un snapshot pris depuis un poste o&ugrave; le m&ecirc;me acc&egrave;s distant &eacute;choue.</li>
+    </ul>
+    <p>Le r&eacute;sultat attendu n'est pas seulement une diff&eacute;rence brute. L'outil classe les causes probables, explique les preuves retenues, &eacute;carte les fausses pistes et propose une action suivante.</p>
+
+    <h2 id="idee">Principe en une minute</h2>
+    <div class="card example">
+      <h3>Situation typique</h3>
+      <p>Le partage <code>\\SCCF-71SFS42\share</code> est accessible depuis <code>SCCF-CZC025814B</code>, mais pas depuis <code>PC-BEN-001</code>.</p>
+      <p>Vous produisez donc deux snapshots DTLknowsWhy vers la m&ecirc;me cible <code>SCCF-71SFS42</code>, puis vous lancez DTLcompare en donnant d'abord le snapshot du poste qui fonctionne, ensuite celui du poste en &eacute;chec.</p>
+    </div>
+    <pre><code>python comparative_analysis.py ok_depuis_SCCF-CZC025814B.json ko_depuis_PC-BEN-001.json</code></pre>
+    <p>Si le port SMB 445 r&eacute;pond depuis les deux postes mais que les partages ne sont visibles que depuis le poste fonctionnel, l'outil orientera plut&ocirc;t vers une cause d'identit&eacute;, de droits ou d'identifiants Windows m&eacute;moris&eacute;s que vers une panne r&eacute;seau.</p>
+
+    <h2 id="preparer">Pr&eacute;parer les fichiers</h2>
+    <ol class="checklist">
+      <li>Lancer DTLknowsWhy depuis le poste o&ugrave; l'acc&egrave;s fonctionne.</li>
+      <li>Lancer DTLknowsWhy depuis le poste o&ugrave; l'acc&egrave;s &eacute;choue.</li>
+      <li>Utiliser strictement la m&ecirc;me cible dans les deux diagnostics : m&ecirc;me serveur, m&ecirc;me IP, m&ecirc;me partage si un partage est test&eacute;.</li>
+      <li>Copier les deux fichiers <code>.json</code> dans le dossier de DTLcompare ou noter leur chemin complet.</li>
+      <li>Renommer les fichiers si n&eacute;cessaire pour ne pas se tromper entre le cas <code>OK</code> et le cas <code>KO</code>.</li>
+    </ol>
+
+    <h3>Exemple de rangement recommand&eacute;</h3>
+    <pre><code>C:\Users\Utilisateur\Documents\Secato\outils\DTLcompare\
+  comparative_analysis.py
+  ok_SCCF-CZC025814B_vers_SCCF-71SFS42.json
+  ko_PC-BEN-001_vers_SCCF-71SFS42.json</code></pre>
+
+    <h3>Contr&ocirc;le rapide avant analyse</h3>
+    <p>Dans PowerShell, placez-vous dans le dossier DTLcompare et v&eacute;rifiez que les deux fichiers sont bien visibles :</p>
+    <pre><code>cd C:\Users\Utilisateur\Documents\Secato\outils\DTLcompare
+dir *.json</code></pre>
+    <p>Si les fichiers sont ailleurs ou si leur nom contient des espaces, utilisez des guillemets :</p>
+    <pre><code>python comparative_analysis.py "C:\Temp\diagnostic OK.json" "C:\Temp\diagnostic KO.json"</code></pre>
+
+    <h2 id="lancer">Lancer l'analyse</h2>
+    <p>La commande attend toujours les fichiers dans cet ordre :</p>
+    <ol>
+      <li><code>working_snapshot</code> : snapshot o&ugrave; l'acc&egrave;s fonctionne ;</li>
+      <li><code>failing_snapshot</code> : snapshot o&ugrave; l'acc&egrave;s &eacute;choue.</li>
+    </ol>
+    <pre><code>python comparative_analysis.py working_snapshot.json failing_snapshot.json</code></pre>
+
+    <h3>Exemple avec les fichiers du dossier</h3>
+    <pre><code>python comparative_analysis.py 172.17.7.19_snapshot_20260610_151730.json 172.17.7.19_snapshot_20260610_152617.json</code></pre>
+
+    <h3>Exemple avec un nom de rapport choisi</h3>
+    <pre><code>mkdir rapports
+python comparative_analysis.py `
+  ok_SCCF-CZC025814B_vers_SCCF-71SFS42.json `
+  ko_PC-BEN-001_vers_SCCF-71SFS42.json `
+  --output-prefix rapports\comparaison_SCCF_vers_SCCF-71SFS42</code></pre>
+    <p class="note">Le caract&egrave;re <code>`</code> en fin de ligne permet seulement de couper une commande PowerShell sur plusieurs lignes. Vous pouvez aussi tout &eacute;crire sur une seule ligne.</p>
+
+    <h2 id="exemples">Exemples de lecture</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ce que DTLcompare observe</th>
+          <th>Ce que cela signifie souvent</th>
+          <th>Action concr&egrave;te</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="ok">TCP 445 ouvert</span> depuis les deux postes, cible joignable, partages visibles seulement depuis le poste OK.</td>
+          <td>Le serveur SMB et le r&eacute;seau fonctionnent probablement. Le probl&egrave;me est plus probablement li&eacute; au compte Windows, aux droits ou &agrave; un identifiant m&eacute;moris&eacute; sur le poste KO.</td>
+          <td>Sur le poste KO : vider les sessions SMB avec <code>net use * /delete /y</code>, v&eacute;rifier <code>cmdkey /list</code>, puis retester avec un compte explicite.</td>
+        </tr>
+        <tr>
+          <td><span class="danger">TCP 445 ferm&eacute;</span> ou inaccessible uniquement depuis le poste KO.</td>
+          <td>Le compte n'est peut-&ecirc;tre pas encore en cause. Le flux SMB est bloqu&eacute; entre ce poste et la cible.</td>
+          <td>V&eacute;rifier VPN, pare-feu local, profil r&eacute;seau Windows, filtrage EDR, VLAN ou r&egrave;gles de routage.</td>
+        </tr>
+        <tr>
+          <td><span class="danger">Ping KO</span> depuis le poste KO, mais ping OK depuis le poste fonctionnel.</td>
+          <td>Le probl&egrave;me est probablement plus bas niveau : r&eacute;solution DNS, routage, connectivit&eacute; IP ou filtrage ICMP.</td>
+          <td>Tester <code>nslookup nom_serveur</code>, <code>ping adresse_ip</code>, <code>tracert adresse_ip</code>, puis comparer les routes.</td>
+        </tr>
+        <tr>
+          <td>L'analyse signale une cible diff&eacute;rente entre les deux snapshots.</td>
+          <td>La comparaison n'est pas fiable : on ne compare pas exactement le m&ecirc;me acc&egrave;s.</td>
+          <td>Refaire les deux diagnostics DTLknowsWhy avec la m&ecirc;me cible, puis relancer DTLcompare.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="rapports">Rapports produits</h2>
+    <p>Par d&eacute;faut, DTLcompare &eacute;crit trois fichiers dans le dossier courant. Apr&egrave;s une ex&eacute;cution r&eacute;ussie, la console affiche leurs chemins.</p>
+    <div class="card">
+      <h3>Rapport HTML</h3>
+      <p>Document principal pour la lecture humaine. Ouvrez-le dans un navigateur et partagez-le avec une &eacute;quipe support, poste de travail, r&eacute;seau ou infrastructure.</p>
+      <pre><code>start .\comparative_analysis_SCCF-CZC025814B_vs_PC-BEN-001_20260610_160015.html</code></pre>
+    </div>
+    <div class="card">
+      <h3>Rapport texte</h3>
+      <p>Synth&egrave;se compacte &agrave; coller dans un ticket ou un courriel. Il contient la conclusion, les causes probables, les causes &eacute;cart&eacute;es et les actions recommand&eacute;es.</p>
+    </div>
+    <div class="card">
+      <h3>Rapport JSON</h3>
+      <p>Version structur&eacute;e pour archivage, automatisation ou comparaison ult&eacute;rieure. Utilisez-le si un autre outil doit relire les constats.</p>
+    </div>
+
+    <h2 id="lire">Lire l'analyse</h2>
+    <p>Commencez par la conclusion, puis descendez vers les preuves. Ne vous arr&ecirc;tez pas au premier message d'erreur Windows : DTLcompare cherche &agrave; savoir si ce message est coh&eacute;rent avec le reste des tests.</p>
+    <ul>
+      <li><strong>Causes probables</strong> : hypoth&egrave;ses class&eacute;es avec preuves, confiance et score de pertinence.</li>
+      <li><strong>Causes &eacute;limin&eacute;es</strong> : pistes que les donn&eacute;es permettent d'&eacute;carter, par exemple serveur SMB muet ou port 445 bloqu&eacute;.</li>
+      <li><strong>Preuves</strong> : faits extraits des snapshots, comme ping, TCP 445, partages visibles, type d'identit&eacute; Windows ou message d'erreur.</li>
+      <li><strong>Rem&eacute;diation</strong> : action conseill&eacute;e lorsque l'analyse permet de proposer une suite logique.</li>
+    </ul>
+
+    <h3>Exemple concret de conclusion</h3>
+    <pre><code>Le serveur SCCF-71SFS42 fonctionne correctement.
+Le probl&egrave;me semble sp&eacute;cifique au poste PC-BEN-001.
+
+Preuves :
+- SCCF-CZC025814B voit les partages.
+- TCP 445 r&eacute;pond depuis les deux postes.
+- PC-BEN-001 contient un indice d'&eacute;chec d'identifiants.</code></pre>
+    <p>Dans ce cas, il est inutile de commencer par red&eacute;marrer le serveur ou modifier le partage. La piste prioritaire est le poste en &eacute;chec : session SMB, identifiants m&eacute;moris&eacute;s, compte utilis&eacute; ou droits associ&eacute;s.</p>
+
+    <h2 id="actions">Actions apr&egrave;s l'analyse</h2>
+    <p>Quand l'analyse pointe vers une cause d'authentification SMB c&ocirc;t&eacute; client, voici une proc&eacute;dure simple &agrave; ex&eacute;cuter sur le poste en &eacute;chec.</p>
+    <pre><code>whoami
+whoami /upn
+net use
+cmdkey /list
+net use * /delete /y</code></pre>
+    <p>Ensuite, retestez l'acc&egrave;s avec un compte explicite. Adaptez le format du compte au contexte r&eacute;el : domaine, compte local du serveur, compte AzureAD ou UPN.</p>
+    <pre><code>net use \\SCCF-71SFS42\share /user:DOMAINE\utilisateur *
+net use \\SCCF-71SFS42\share /user:utilisateur@domaine.example *</code></pre>
+    <p>Si le retest fonctionne apr&egrave;s nettoyage des sessions ou changement de compte, joignez au ticket le rapport HTML et indiquez le compte utilis&eacute; lors du test r&eacute;ussi.</p>
+
+    <h2 id="options">Options utiles</h2>
+    <pre><code>--lang fr|en
 --json
---output-prefix chemin/rapport
---no-files</code></pre><p><code>--output-prefix</code> permet de choisir le nom et l'emplacement des rapports. <code>--no-files</code> limite la sortie à la console, utile pour un test rapide.</p>
-<h2 id="depannage">Dépannage</h2><ul><li>Si l'import <code>expert.compare</code> échoue, lancer DTLcompare dans un environnement ou DTLknowsWhy est disponible.</li><li>Si les résultats semblent incoherents, vérifier que les deux snapshots ciblent exactement le même accès.</li><li>Si aucun rapport n'apparait, vérifier le dossier courant, les droits d'ecriture et l'usage eventuel de <code>--no-files</code>.</li><li>Si l'analyse signale une cible differente, refaire les deux diagnostics avec la même cible.</li></ul>
-</main></body></html>
+--output-prefix chemin\rapport
+--no-files</code></pre>
+    <table>
+      <thead>
+        <tr>
+          <th>Option</th>
+          <th>Quand l'utiliser</th>
+          <th>Exemple</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>--output-prefix</code></td>
+          <td>Choisir le dossier et le nom de base des rapports.</td>
+          <td><code>mkdir rapports</code>, puis <code>--output-prefix rapports\incident_445_PC-BEN-001</code></td>
+        </tr>
+        <tr>
+          <td><code>--json</code></td>
+          <td>Afficher aussi les constats JSON dans la console.</td>
+          <td><code>python comparative_analysis.py ok.json ko.json --json</code></td>
+        </tr>
+        <tr>
+          <td><code>--no-files</code></td>
+          <td>Faire un test rapide sans cr&eacute;er de rapports.</td>
+          <td><code>python comparative_analysis.py ok.json ko.json --no-files</code></td>
+        </tr>
+        <tr>
+          <td><code>--lang en</code></td>
+          <td>Produire une analyse en anglais.</td>
+          <td><code>python comparative_analysis.py ok.json ko.json --lang en</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="depannage">D&eacute;pannage</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Sympt&ocirc;me</th>
+          <th>Cause probable</th>
+          <th>Correction</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ModuleNotFoundError: No module named 'expert'</code></td>
+          <td>DTLknowsWhy n'est pas disponible dans l'environnement Python utilis&eacute;.</td>
+          <td>Lancer DTLcompare depuis l'environnement o&ugrave; DTLknowsWhy est install&eacute;, ou ajouter le dossier source de DTLknowsWhy &agrave; <code>PYTHONPATH</code>.</td>
+        </tr>
+        <tr>
+          <td>Le rapport dit que les cibles sont diff&eacute;rentes.</td>
+          <td>Les deux snapshots ne testent pas exactement le m&ecirc;me serveur, nom DNS, IP ou partage.</td>
+          <td>Refaire les diagnostics avec la m&ecirc;me cible, puis relancer l'analyse.</td>
+        </tr>
+        <tr>
+          <td>Aucun rapport n'appara&icirc;t.</td>
+          <td>Le dossier courant n'est pas celui attendu, l'option <code>--no-files</code> a &eacute;t&eacute; utilis&eacute;e, ou le dossier de sortie n'existe pas.</td>
+          <td>Regarder les chemins affich&eacute;s par la console, retirer <code>--no-files</code>, cr&eacute;er le dossier de sortie si n&eacute;cessaire.</td>
+        </tr>
+        <tr>
+          <td>Les r&eacute;sultats semblent incoh&eacute;rents.</td>
+          <td>Les fichiers ont peut-&ecirc;tre &eacute;t&eacute; pass&eacute;s dans le mauvais ordre.</td>
+          <td>Relancer avec le snapshot OK en premier et le snapshot KO en second.</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>
